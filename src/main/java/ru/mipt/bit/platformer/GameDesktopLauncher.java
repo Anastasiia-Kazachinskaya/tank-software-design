@@ -20,15 +20,23 @@ import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.Tree;
 import ru.mipt.bit.platformer.util.TileMovement;
 
+import ru.mipt.bit.platformer.level.FileLevelSource;
+import ru.mipt.bit.platformer.model.LevelLayout;
+import ru.mipt.bit.platformer.model.LevelSource;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Точка входа: собирает модель, графику и ввод и крутит игровой цикл
  * (ввод -> обновление модели -> отрисовка). Своей логики не содержит.
  */
 public class GameDesktopLauncher implements ApplicationListener {
-    private static final String LEVEL_PATH = "level.tmx";
     private static final String TANK_TEXTURE_PATH = "images/tank_blue.png";
     private static final String TREE_TEXTURE_PATH = "images/greenTree.png";
+    private static final String MAP_PATH = "level.tmx";
+    private static final String LEVEL_LAYOUT_PATH = "level.txt";
 
     private GameRenderer renderer;
     private InputController inputController;
@@ -36,21 +44,36 @@ public class GameDesktopLauncher implements ApplicationListener {
 
     @Override
     public void create() {
-        Batch batch = new SpriteBatch();
-        LevelGraphics levelGraphics = new LevelGraphics(LEVEL_PATH, batch);
+        // откуда берётся расстановка — решается здесь и только здесь
+        LevelSource levelSource = new FileLevelSource(LEVEL_LAYOUT_PATH);
+        LevelLayout layout = levelSource.load();
 
         // модель
-        Tree tree = new Tree(new GridPoint2(1, 3));
-        level = new Level(levelGraphics.getWidth(), levelGraphics.getHeight());
-        level.addObject(tree);
-        Tank tank = new Tank(new GridPoint2(1, 1), level);
+        level = new Level(layout.getWidth(), layout.getHeight());
+        List<Tree> trees = new ArrayList<>();
+        for (GridPoint2 obstacle : layout.getObstacles()) {
+            Tree tree = new Tree(obstacle);
+            trees.add(tree);
+            level.addObject(tree);
+        }
+        Tank tank = new Tank(layout.getPlayerSpawn(), level);
         level.addObject(tank);
 
         // графика
+        Batch batch = new SpriteBatch();
+        LevelGraphics levelGraphics = new LevelGraphics(MAP_PATH, batch);
+        if (layout.getWidth() != levelGraphics.getWidth() || layout.getHeight() != levelGraphics.getHeight()) {
+            throw new IllegalStateException(
+                    "Level layout " + layout.getWidth() + "x" + layout.getHeight()
+                            + " does not match the map " + levelGraphics.getWidth() + "x" + levelGraphics.getHeight());
+        }
         TileMovement tileMovement = new TileMovement(levelGraphics.getGroundLayer(), Interpolation.smooth);
+
         renderer = new GameRenderer(batch, levelGraphics)
-                .addGraphics(new TankGraphics(tank, tileMovement, TANK_TEXTURE_PATH))
-                .addGraphics(new TreeGraphics(tree, levelGraphics.getGroundLayer(), TREE_TEXTURE_PATH));
+                .addGraphics(new TankGraphics(tank, tileMovement, TANK_TEXTURE_PATH));
+        for (Tree tree : trees) {
+            renderer.addGraphics(new TreeGraphics(tree, levelGraphics.getGroundLayer(), TREE_TEXTURE_PATH));
+        }
 
         // ввод
         inputController = new InputController(new GdxKeyboard())
