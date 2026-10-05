@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import java.util.List;
 
 /** Игровое поле: размеры и препятствия. Отвечает на вопрос "можно ли встать в клетку". */
-public class Level {
+public class Level implements Obstacles {
     private final int width;
     private final int height;
     private final List<GameObject> obstacles;
@@ -32,6 +32,7 @@ public class Level {
                 && coordinates.y >= 0 && coordinates.y < height;
     }
 
+    @Override
     public boolean isFree(GridPoint2 coordinates) {
         if (!isInside(coordinates)) {
             return false;

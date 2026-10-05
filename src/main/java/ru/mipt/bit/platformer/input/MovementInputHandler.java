@@ -1,31 +1,23 @@
 package ru.mipt.bit.platformer.input;
 
 import ru.mipt.bit.platformer.model.Direction;
-import ru.mipt.bit.platformer.model.Level;
-import ru.mipt.bit.platformer.model.Tank;
+import ru.mipt.bit.platformer.model.Movable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
-/**
- * Переводит клавиши движения в команду tank.move(...).
- * Если зажато несколько клавиш, срабатывает первая по порядку привязок —
- * танк не может ехать в две стороны сразу.
- */
 public class MovementInputHandler implements InputHandler {
-    private final Tank tank;
-    private final Level level;
+    private final Movable movable;
     private final Map<Integer, Direction> keyBindings;
 
-    public MovementInputHandler(Tank tank, Level level) {
-        this(tank, level, defaultKeyBindings());
+    public MovementInputHandler(Movable movable) {
+        this(movable, defaultKeyBindings());
     }
 
-    public MovementInputHandler(Tank tank, Level level, Map<Integer, Direction> keyBindings) {
-        this.tank = tank;
-        this.level = level;
+    public MovementInputHandler(Movable movable, Map<Integer, Direction> keyBindings) {
+        this.movable = movable;
         this.keyBindings = new LinkedHashMap<>(keyBindings);
     }
 
@@ -46,7 +38,7 @@ public class MovementInputHandler implements InputHandler {
     public void handleInput(Keyboard keyboard) {
         for (Map.Entry<Integer, Direction> binding : keyBindings.entrySet()) {
             if (keyboard.isKeyPressed(binding.getKey())) {
-                tank.move(binding.getValue(), level);
+                movable.move(binding.getValue());
                 return;
             }
         }

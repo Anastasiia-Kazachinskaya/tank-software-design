@@ -42,8 +42,8 @@ public class GameDesktopLauncher implements ApplicationListener {
 
         // модель
         Tree tree = new Tree(new GridPoint2(1, 3));
-        tank = new Tank(new GridPoint2(1, 1));
         Level level = new Level(levelGraphics.getWidth(), levelGraphics.getHeight(), List.of(tree));
+        tank = new Tank(new GridPoint2(1, 1), level);
 
         // графика
         TileMovement tileMovement = new TileMovement(levelGraphics.getGroundLayer(), Interpolation.smooth);
@@ -53,7 +53,7 @@ public class GameDesktopLauncher implements ApplicationListener {
 
         // ввод
         inputController = new InputController(new GdxKeyboard())
-                .addHandler(new MovementInputHandler(tank, level));
+                .addHandler(new MovementInputHandler(tank));
     }
 
     @Override
