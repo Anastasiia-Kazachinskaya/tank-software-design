@@ -4,8 +4,6 @@ import com.badlogic.gdx.math.GridPoint2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class LevelTest {
@@ -13,7 +11,7 @@ class LevelTest {
 
     @BeforeEach
     void setUp() {
-        level = new Level(10, 8, List.of(new Tree(new GridPoint2(1, 3))));
+        level = new Level(10, 8).addObject(new Tree(new GridPoint2(1, 3)));
     }
 
     @Test
@@ -43,8 +41,8 @@ class LevelTest {
     }
 
     @Test
-    void levelWithoutObstaclesIsFreeEverywhereInside() {
-        Level empty = new Level(2, 2, List.of());
+    void emptyLevelIsFreeEverywhereInside() {
+        Level empty = new Level(2, 2);
 
         assertTrue(empty.isFree(new GridPoint2(0, 0)));
         assertTrue(empty.isFree(new GridPoint2(1, 1)));
@@ -52,13 +50,33 @@ class LevelTest {
 
     @Test
     void rejectsNonPositiveSize() {
-        assertThrows(IllegalArgumentException.class, () -> new Level(0, 5, List.of()));
-        assertThrows(IllegalArgumentException.class, () -> new Level(5, -1, List.of()));
+        assertThrows(IllegalArgumentException.class, () -> new Level(0, 5));
+        assertThrows(IllegalArgumentException.class, () -> new Level(5, -1));
     }
 
     @Test
     void exposesSize() {
         assertEquals(10, level.getWidth());
         assertEquals(8, level.getHeight());
+    }
+
+    @Test
+    void anotherTankBlocksTheCell() {
+        Tank other = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(other);
+
+        assertFalse(level.isFree(new GridPoint2(5, 5)));
+    }
+
+    @Test
+    void updateAdvancesMovableObjects() {
+        Tank tank = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(tank);
+        tank.move(Direction.RIGHT);
+
+        level.update(Tank.DEFAULT_MOVEMENT_DURATION_SECONDS);
+
+        assertFalse(tank.isMoving());
+        assertEquals(new GridPoint2(6, 5), tank.getCoordinates());
     }
 }

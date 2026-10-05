@@ -10,6 +10,7 @@ import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.Tree;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,9 +23,9 @@ class MovementInputHandlerTest {
     @BeforeEach
     void setUp() {
         // справа от танка дерево
-        level = new Level(10, 8, List.of(new Tree(new GridPoint2(3, 2))));
-        tank = new Tank(new GridPoint2(2, 2));
-        handler = new MovementInputHandler(tank, level);
+        level = new Level(10, 8).addObject(new Tree(new GridPoint2(3, 2)));
+        tank = new Tank(new GridPoint2(2, 2), level);
+        handler = new MovementInputHandler(tank);
     }
 
     @Test
@@ -51,9 +52,9 @@ class MovementInputHandlerTest {
 
     @Test
     void blockedMoveOnlyTurnsTank() {
-        tank.move(Direction.UP, level);
+        tank.move(Direction.UP);
         tank.update(Tank.DEFAULT_MOVEMENT_DURATION_SECONDS);
-        tank.move(Direction.DOWN, level);
+        tank.move(Direction.DOWN);
         tank.update(Tank.DEFAULT_MOVEMENT_DURATION_SECONDS);
 
         handler.handleInput(new FakeKeyboard().press(Input.Keys.D));
@@ -83,7 +84,7 @@ class MovementInputHandlerTest {
     @Test
     void customBindingsAreUsed() {
         MovementInputHandler custom = new MovementInputHandler(
-                tank, level, Map.of(Input.Keys.SPACE, Direction.DOWN));
+                tank, Map.of(Input.Keys.SPACE, Direction.DOWN));
 
         custom.handleInput(new FakeKeyboard().press(Input.Keys.S));
         assertFalse(tank.isMoving());
@@ -93,11 +94,21 @@ class MovementInputHandlerTest {
     }
 
     private void assertMovesTo(int key, Direction direction, GridPoint2 destination) {
-        Tank freshTank = new Tank(new GridPoint2(2, 2));
-        new MovementInputHandler(freshTank, level).handleInput(new FakeKeyboard().press(key));
+        Tank freshTank = new Tank(new GridPoint2(2, 2), level);
+        new MovementInputHandler(freshTank).handleInput(new FakeKeyboard().press(key));
 
         assertTrue(freshTank.isMoving());
         assertEquals(direction, freshTank.getDirection());
         assertEquals(destination, freshTank.getDestinationCoordinates());
+    }
+    @Test
+    void worksWithAnyMovable() {
+        // DIP: обработчику достаточно Movable, про Tank он не знает
+        List<Direction> commands = new ArrayList<>();
+        MovementInputHandler spyHandler = new MovementInputHandler(commands::add);
+
+        spyHandler.handleInput(new FakeKeyboard().press(Input.Keys.A));
+
+        assertEquals(List.of(Direction.LEFT), commands);
     }
 }

@@ -3,20 +3,37 @@ package ru.mipt.bit.platformer.model;
 import com.badlogic.gdx.math.GridPoint2;
 
 import java.util.List;
+import java.util.ArrayList;
 
-/** Игровое поле: размеры и препятствия. Отвечает на вопрос "можно ли встать в клетку". */
-public class Level {
+
+public class Level implements Obstacles {
     private final int width;
     private final int height;
-    private final List<GameObject> obstacles;
+    private final List<GameObject> objects = new ArrayList<>();
 
-    public Level(int width, int height, List<? extends GameObject> obstacles) {
+    public Level(int width, int height) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Level size must be positive: " + width + "x" + height);
         }
         this.width = width;
         this.height = height;
-        this.obstacles = List.copyOf(obstacles);
+    }
+
+    public Level addObject(GameObject object) {
+        objects.add(object);
+        return this;
+    }
+
+    public List<GameObject> getObjects() {
+        return List.copyOf(objects);
+    }
+
+    public void update(float deltaTime) {
+        for (GameObject object : objects) {
+            if (object instanceof Updatable) {
+                ((Updatable) object).update(deltaTime);
+            }
+        }
     }
 
     public int getWidth() {
@@ -32,11 +49,12 @@ public class Level {
                 && coordinates.y >= 0 && coordinates.y < height;
     }
 
+    @Override
     public boolean isFree(GridPoint2 coordinates) {
         if (!isInside(coordinates)) {
             return false;
         }
-        for (GameObject obstacle : obstacles) {
+        for (GameObject obstacle : objects) {
             if (obstacle.getCoordinates().equals(coordinates)) {
                 return false;
             }

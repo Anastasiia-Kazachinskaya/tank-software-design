@@ -4,8 +4,6 @@ import com.badlogic.gdx.math.GridPoint2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class TankTest {
@@ -18,8 +16,8 @@ class TankTest {
     @BeforeEach
     void setUp() {
         // танк в левом нижнем углу, прямо над ним дерево
-        level = new Level(10, 8, List.of(new Tree(new GridPoint2(0, 1))));
-        tank = new Tank(new GridPoint2(0, 0));
+        level = new Level(10, 8).addObject(new Tree(new GridPoint2(0, 1)));
+        tank = new Tank(new GridPoint2(0, 0), level);
     }
 
     @Test
@@ -33,7 +31,7 @@ class TankTest {
 
     @Test
     void moveToFreeCellStartsMovement() {
-        tank.move(Direction.RIGHT, level);
+        tank.move(Direction.RIGHT);
 
         assertTrue(tank.isMoving());
         assertEquals(0f, tank.getMovementProgress(), EPS);
@@ -43,7 +41,7 @@ class TankTest {
 
     @Test
     void coordinatesChangeOnlyWhenMovementFinishes() {
-        tank.move(Direction.RIGHT, level);
+        tank.move(Direction.RIGHT);
 
         tank.update(DURATION / 2);
         assertTrue(tank.isMoving());
@@ -57,7 +55,7 @@ class TankTest {
 
     @Test
     void progressIsClampedToOne() {
-        tank.move(Direction.RIGHT, level);
+        tank.move(Direction.RIGHT);
 
         tank.update(DURATION * 10);
 
@@ -67,7 +65,7 @@ class TankTest {
 
     @Test
     void doesNotMoveIntoObstacleButTurns() {
-        tank.move(Direction.UP, level);
+        tank.move(Direction.UP);
 
         assertFalse(tank.isMoving());
         assertEquals(Direction.UP, tank.getDirection());
@@ -76,21 +74,21 @@ class TankTest {
 
     @Test
     void doesNotLeaveLevelButTurns() {
-        tank.move(Direction.LEFT, level);
+        tank.move(Direction.LEFT);
         assertFalse(tank.isMoving());
         assertEquals(Direction.LEFT, tank.getDirection());
 
-        tank.move(Direction.DOWN, level);
+        tank.move(Direction.DOWN);
         assertFalse(tank.isMoving());
         assertEquals(Direction.DOWN, tank.getDirection());
     }
 
     @Test
     void newMoveIsIgnoredWhileMoving() {
-        tank.move(Direction.RIGHT, level);
+        tank.move(Direction.RIGHT);
         tank.update(DURATION / 2);
 
-        tank.move(Direction.UP, level);
+        tank.move(Direction.UP);
 
         assertEquals(new GridPoint2(1, 0), tank.getDestinationCoordinates());
         assertEquals(0.5f, tank.getMovementProgress(), EPS);
@@ -98,10 +96,10 @@ class TankTest {
 
     @Test
     void canMoveAgainAfterFinishing() {
-        tank.move(Direction.RIGHT, level);
+        tank.move(Direction.RIGHT);
         tank.update(DURATION);
 
-        tank.move(Direction.RIGHT, level);
+        tank.move(Direction.RIGHT);
         tank.update(DURATION);
 
         assertEquals(new GridPoint2(2, 0), tank.getCoordinates());
@@ -118,7 +116,7 @@ class TankTest {
     @Test
     void externalChangesDoNotAffectTank() {
         GridPoint2 initial = new GridPoint2(3, 3);
-        Tank other = new Tank(initial);
+        Tank other = new Tank(initial, level);
 
         initial.set(9, 9);
         other.getCoordinates().set(9, 9);
@@ -130,6 +128,19 @@ class TankTest {
 
     @Test
     void rejectsNonPositiveDuration() {
-        assertThrows(IllegalArgumentException.class, () -> new Tank(new GridPoint2(0, 0), 0f));
+        assertThrows(IllegalArgumentException.class, () -> new Tank(new GridPoint2(0, 0), level, 0f));
+    }
+
+    @Test
+    void worksWithAnyObstaclesImplementation() {
+        // DIP: танку достаточно любой реализации Obstacles, не обязательно Level
+        Obstacles everythingBlocked = coordinates -> false;
+        Tank blockedTank = new Tank(new GridPoint2(3, 3), everythingBlocked);
+
+        blockedTank.move(Direction.UP);
+
+        assertFalse(blockedTank.isMoving());
+        assertEquals(Direction.UP, blockedTank.getDirection());
     }
 }
+

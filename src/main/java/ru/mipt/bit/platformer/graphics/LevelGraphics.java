@@ -5,13 +5,12 @@ import com.badlogic.gdx.maps.MapRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
-import com.badlogic.gdx.utils.Disposable;
 
 import static ru.mipt.bit.platformer.util.GdxGameUtils.createSingleLayerMapRenderer;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.getSingleLayer;
 
-/** Загружает tmx-карту и рисует её фон. */
-public class LevelGraphics implements Disposable {
+
+public class LevelGraphics implements Background {
     private final TiledMap tiledMap;
     private final TiledMapTileLayer groundLayer;
     private final MapRenderer mapRenderer;
@@ -34,7 +33,7 @@ public class LevelGraphics implements Disposable {
         return groundLayer.getHeight();
     }
 
-    /** Карта рисуется до batch.begin(): рендерер карты сам управляет batch. */
+    @Override
     public void render() {
         mapRenderer.render();
     }

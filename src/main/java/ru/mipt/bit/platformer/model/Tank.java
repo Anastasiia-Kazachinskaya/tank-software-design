@@ -5,11 +5,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import static com.badlogic.gdx.math.MathUtils.clamp;
 import static com.badlogic.gdx.math.MathUtils.isEqual;
 
-/**
- * Модель танка: клетка, клетка назначения, прогресс перемещения и направление.
- * Ничего не знает о текстурах и отрисовке.
- */
-public class Tank implements GameObject {
+public class Tank implements GameObject, Movable, Updatable {
     public static final float DEFAULT_MOVEMENT_DURATION_SECONDS = 0.4f;
     private static final float MOVEMENT_FINISHED = 1f;
 
@@ -17,17 +13,19 @@ public class Tank implements GameObject {
     private final GridPoint2 coordinates;
     private final GridPoint2 destinationCoordinates;
 
+    private final Obstacles obstacles;
+
     private float movementProgress = MOVEMENT_FINISHED;
     private Direction direction = Direction.RIGHT;
 
-    public Tank(GridPoint2 initialCoordinates) {
-        this(initialCoordinates, DEFAULT_MOVEMENT_DURATION_SECONDS);
+    public Tank(GridPoint2 initialCoordinates, Obstacles obstacles) {
+        this(initialCoordinates, obstacles, DEFAULT_MOVEMENT_DURATION_SECONDS);
     }
-
-    public Tank(GridPoint2 initialCoordinates, float movementDurationSeconds) {
+    public Tank(GridPoint2 initialCoordinates, Obstacles obstacles, float movementDurationSeconds) {
         if (movementDurationSeconds <= 0f) {
             throw new IllegalArgumentException("Movement duration must be positive");
         }
+        this.obstacles = obstacles;
         this.movementDurationSeconds = movementDurationSeconds;
         this.coordinates = new GridPoint2(initialCoordinates);
         this.destinationCoordinates = new GridPoint2(initialCoordinates);
@@ -54,11 +52,8 @@ public class Tank implements GameObject {
         return !isEqual(movementProgress, MOVEMENT_FINISHED);
     }
 
-    /**
-     * Поворачивает танк и, если он стоит на месте и клетка свободна,
-     * начинает движение в соседнюю клетку.
-     */
-    public void move(Direction direction, Level level) {
+    @Override
+    public void move(Direction direction) {
         this.direction = direction;
 
         if (isMoving()) {
@@ -66,7 +61,7 @@ public class Tank implements GameObject {
         }
 
         GridPoint2 destination = direction.apply(coordinates);
-        if (level.isFree(destination)) {
+        if (obstacles.isFree(destination)) {
             destinationCoordinates.set(destination);
             movementProgress = 0f;
         }
