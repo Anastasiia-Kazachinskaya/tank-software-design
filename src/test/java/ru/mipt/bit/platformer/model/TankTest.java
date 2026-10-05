@@ -4,8 +4,6 @@ import com.badlogic.gdx.math.GridPoint2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class TankTest {
@@ -18,7 +16,7 @@ class TankTest {
     @BeforeEach
     void setUp() {
         // танк в левом нижнем углу, прямо над ним дерево
-        level = new Level(10, 8, List.of(new Tree(new GridPoint2(0, 1))));
+        level = new Level(10, 8).addObject(new Tree(new GridPoint2(0, 1)));
         tank = new Tank(new GridPoint2(0, 0), level);
     }
 

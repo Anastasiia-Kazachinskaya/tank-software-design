@@ -23,7 +23,7 @@ class MovementInputHandlerTest {
     @BeforeEach
     void setUp() {
         // справа от танка дерево
-        level = new Level(10, 8, List.of(new Tree(new GridPoint2(3, 2))));
+        level = new Level(10, 8).addObject(new Tree(new GridPoint2(3, 2)));
         tank = new Tank(new GridPoint2(2, 2), level);
         handler = new MovementInputHandler(tank);
     }

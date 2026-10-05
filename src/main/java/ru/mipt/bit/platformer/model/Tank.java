@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.GridPoint2;
 import static com.badlogic.gdx.math.MathUtils.clamp;
 import static com.badlogic.gdx.math.MathUtils.isEqual;
 
-public class Tank implements GameObject, Movable {
+public class Tank implements GameObject, Movable, Updatable {
     public static final float DEFAULT_MOVEMENT_DURATION_SECONDS = 0.4f;
     private static final float MOVEMENT_FINISHED = 1f;
 

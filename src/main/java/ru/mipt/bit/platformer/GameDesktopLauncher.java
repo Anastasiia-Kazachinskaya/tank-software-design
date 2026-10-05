@@ -20,7 +20,6 @@ import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.Tree;
 import ru.mipt.bit.platformer.util.TileMovement;
 
-import java.util.List;
 
 /**
  * Точка входа: собирает модель, графику и ввод и крутит игровой цикл
@@ -33,7 +32,7 @@ public class GameDesktopLauncher implements ApplicationListener {
 
     private GameRenderer renderer;
     private InputController inputController;
-    private Tank tank;
+    private Level level;
 
     @Override
     public void create() {
@@ -42,8 +41,10 @@ public class GameDesktopLauncher implements ApplicationListener {
 
         // модель
         Tree tree = new Tree(new GridPoint2(1, 3));
-        Level level = new Level(levelGraphics.getWidth(), levelGraphics.getHeight(), List.of(tree));
-        tank = new Tank(new GridPoint2(1, 1), level);
+        level = new Level(levelGraphics.getWidth(), levelGraphics.getHeight());
+        level.addObject(tree);
+        Tank tank = new Tank(new GridPoint2(1, 1), level);
+        level.addObject(tank);
 
         // графика
         TileMovement tileMovement = new TileMovement(levelGraphics.getGroundLayer(), Interpolation.smooth);
@@ -61,7 +62,7 @@ public class GameDesktopLauncher implements ApplicationListener {
         float deltaTime = Gdx.graphics.getDeltaTime();
 
         inputController.handleInput();
-        tank.update(deltaTime);
+        level.update(deltaTime);
         renderer.render();
     }
 
