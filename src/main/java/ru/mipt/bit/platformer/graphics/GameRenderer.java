@@ -15,14 +15,13 @@ import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
  */
 public class GameRenderer implements Disposable {
     private final Batch batch;
-    private final LevelGraphics levelGraphics;
     private final List<Graphics> objectGraphics = new ArrayList<>();
+    private final Background background;
 
-    public GameRenderer(Batch batch, LevelGraphics levelGraphics) {
+    public GameRenderer(Batch batch, Background background) {
         this.batch = batch;
-        this.levelGraphics = levelGraphics;
+        this.background = background;
     }
-
     public GameRenderer addGraphics(Graphics graphics) {
         objectGraphics.add(graphics);
         return this;
@@ -32,7 +31,7 @@ public class GameRenderer implements Disposable {
         Gdx.gl.glClearColor(0f, 0f, 0.2f, 1f);
         Gdx.gl.glClear(GL_COLOR_BUFFER_BIT);
 
-        levelGraphics.render();
+        background.render();
 
         batch.begin();
         for (Graphics graphics : objectGraphics) {
@@ -47,7 +46,7 @@ public class GameRenderer implements Disposable {
         for (Graphics graphics : objectGraphics) {
             graphics.dispose();
         }
-        levelGraphics.dispose();
+        background.dispose();
         batch.dispose();
     }
 }
