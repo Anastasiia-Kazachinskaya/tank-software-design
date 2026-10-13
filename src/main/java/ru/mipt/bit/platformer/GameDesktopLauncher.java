@@ -23,10 +23,10 @@ import ru.mipt.bit.platformer.util.TileMovement;
 import ru.mipt.bit.platformer.level.FileLevelSource;
 import ru.mipt.bit.platformer.model.LevelLayout;
 import ru.mipt.bit.platformer.model.LevelSource;
+import ru.mipt.bit.platformer.level.RandomLevelSource;
 
 import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  * Точка входа: собирает модель, графику и ввод и крутит игровой цикл
@@ -37,15 +37,22 @@ public class GameDesktopLauncher implements ApplicationListener {
     private static final String TREE_TEXTURE_PATH = "images/greenTree.png";
     private static final String MAP_PATH = "level.tmx";
     private static final String LEVEL_LAYOUT_PATH = "level.txt";
+    private static final String RANDOM_LEVEL_ARGUMENT = "random";
+    private static final int RANDOM_LEVEL_WIDTH = 10;
+    private static final int RANDOM_LEVEL_HEIGHT = 8;
+    private static final int RANDOM_OBSTACLE_COUNT = 7;
 
     private GameRenderer renderer;
     private InputController inputController;
     private Level level;
+    private final LevelSource levelSource;
+
+    public GameDesktopLauncher(LevelSource levelSource) {
+        this.levelSource = levelSource;
+    }
 
     @Override
     public void create() {
-        // откуда берётся расстановка — решается здесь и только здесь
-        LevelSource levelSource = new FileLevelSource(LEVEL_LAYOUT_PATH);
         LevelLayout layout = levelSource.load();
 
         // модель
@@ -113,6 +120,13 @@ public class GameDesktopLauncher implements ApplicationListener {
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         // level width: 10 tiles x 128px, height: 8 tiles x 128px
         config.setWindowedMode(1280, 1024);
-        new Lwjgl3Application(new GameDesktopLauncher(), config);
+        new Lwjgl3Application(new GameDesktopLauncher(levelSourceFrom(args)), config);
+    }
+
+    private static LevelSource levelSourceFrom(String[] args) {
+        if (args.length > 0 && RANDOM_LEVEL_ARGUMENT.equals(args[0])) {
+            return new RandomLevelSource(RANDOM_LEVEL_WIDTH, RANDOM_LEVEL_HEIGHT, RANDOM_OBSTACLE_COUNT);
+        }
+        return new FileLevelSource(LEVEL_LAYOUT_PATH);
     }
 }
