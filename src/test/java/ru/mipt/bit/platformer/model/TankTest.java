@@ -142,5 +142,27 @@ class TankTest {
         assertFalse(blockedTank.isMoving());
         assertEquals(Direction.UP, blockedTank.getDirection());
     }
+    @Test
+    void standingTankOccupiesOneCell() {
+        assertTrue(tank.occupies(new GridPoint2(0, 0)));
+        assertFalse(tank.occupies(new GridPoint2(1, 0)));
+    }
+
+    @Test
+    void movingTankOccupiesBothCells() {
+        tank.move(Direction.RIGHT);
+
+        assertTrue(tank.occupies(new GridPoint2(0, 0)), "клетка, из которой выезжает");
+        assertTrue(tank.occupies(new GridPoint2(1, 0)), "клетка, в которую въезжает");
+    }
+
+    @Test
+    void releasesOldCellAfterArriving() {
+        tank.move(Direction.RIGHT);
+        tank.update(DURATION);
+
+        assertFalse(tank.occupies(new GridPoint2(0, 0)));
+        assertTrue(tank.occupies(new GridPoint2(1, 0)));
+    }
 }
 

@@ -53,6 +53,11 @@ public class Tank implements GameObject, Movable, Updatable {
     }
 
     @Override
+    public boolean occupies(GridPoint2 coordinates) {
+        return this.coordinates.equals(coordinates) || destinationCoordinates.equals(coordinates);
+    }
+
+    @Override
     public void move(Direction direction) {
         this.direction = direction;
 

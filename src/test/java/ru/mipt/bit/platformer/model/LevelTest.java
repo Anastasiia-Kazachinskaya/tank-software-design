@@ -79,4 +79,27 @@ class LevelTest {
         assertFalse(tank.isMoving());
         assertEquals(new GridPoint2(6, 5), tank.getCoordinates());
     }
+    @Test
+    void cellsOfMovingTankAreNotFree() {
+        Tank moving = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(moving);
+
+        moving.move(Direction.RIGHT);
+
+        assertFalse(level.isFree(new GridPoint2(5, 5)));
+        assertFalse(level.isFree(new GridPoint2(6, 5)));
+    }
+
+    @Test
+    void tankCannotEnterCellTakenByAnotherMovingTank() {
+        Tank first = new Tank(new GridPoint2(5, 5), level);
+        Tank second = new Tank(new GridPoint2(7, 5), level);
+        level.addObject(first).addObject(second);
+
+        first.move(Direction.RIGHT);      // занимает (5,5) и (6,5)
+        second.move(Direction.LEFT);      // хочет в (6,5) — занято
+
+        assertFalse(second.isMoving());
+        assertEquals(new GridPoint2(7, 5), second.getCoordinates());
+    }
 }

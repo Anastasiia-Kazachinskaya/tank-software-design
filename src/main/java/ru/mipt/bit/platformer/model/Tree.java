@@ -13,4 +13,10 @@ public class Tree implements GameObject {
     public GridPoint2 getCoordinates() {
         return new GridPoint2(coordinates);
     }
+
+    @Override
+    public boolean occupies(GridPoint2 coordinates) {
+        return this.coordinates.equals(coordinates);
+    }
 }
+

@@ -54,8 +54,8 @@ public class Level implements Obstacles {
         if (!isInside(coordinates)) {
             return false;
         }
-        for (GameObject obstacle : objects) {
-            if (obstacle.getCoordinates().equals(coordinates)) {
+        for (GameObject object : objects) {
+            if (object.occupies(coordinates)) {
                 return false;
             }
         }
