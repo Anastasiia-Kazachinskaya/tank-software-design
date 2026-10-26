@@ -13,24 +13,24 @@ import ru.mipt.bit.platformer.graphics.LevelGraphics;
 import ru.mipt.bit.platformer.graphics.TankGraphics;
 import ru.mipt.bit.platformer.graphics.TreeGraphics;
 import ru.mipt.bit.platformer.input.GdxKeyboard;
-import ru.mipt.bit.platformer.input.InputController;
-import ru.mipt.bit.platformer.input.MovementInputHandler;
+import ru.mipt.bit.platformer.input.KeyboardCommandSource;
+import ru.mipt.bit.platformer.level.FileLevelSource;
+import ru.mipt.bit.platformer.level.RandomLevelSource;
+import ru.mipt.bit.platformer.model.GameLoop;
 import ru.mipt.bit.platformer.model.Level;
+import ru.mipt.bit.platformer.model.LevelLayout;
+import ru.mipt.bit.platformer.model.LevelSource;
+import ru.mipt.bit.platformer.model.RandomCommandSource;
 import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.Tree;
 import ru.mipt.bit.platformer.util.TileMovement;
-
-import ru.mipt.bit.platformer.level.FileLevelSource;
-import ru.mipt.bit.platformer.model.LevelLayout;
-import ru.mipt.bit.platformer.model.LevelSource;
-import ru.mipt.bit.platformer.level.RandomLevelSource;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Точка входа: собирает модель, графику и ввод и крутит игровой цикл
- * (ввод -> обновление модели -> отрисовка). Своей логики не содержит.
+ * (команды -> обновление модели -> отрисовка). Своей логики не содержит.
  */
 public class GameDesktopLauncher implements ApplicationListener {
     private static final String TANK_TEXTURE_PATH = "images/tank_blue.png";
@@ -43,10 +43,11 @@ public class GameDesktopLauncher implements ApplicationListener {
     private static final int RANDOM_OBSTACLE_COUNT = 7;
     private static final int RANDOM_TANK_COUNT = 3;
 
-    private GameRenderer renderer;
-    private InputController inputController;
-    private Level level;
     private final LevelSource levelSource;
+
+    private GameRenderer renderer;
+    private GameLoop gameLoop;
+    private Level level;
 
     public GameDesktopLauncher(LevelSource levelSource) {
         this.levelSource = levelSource;
@@ -58,14 +59,27 @@ public class GameDesktopLauncher implements ApplicationListener {
 
         // модель
         level = new Level(layout.getWidth(), layout.getHeight());
+        gameLoop = new GameLoop();
+
         List<Tree> trees = new ArrayList<>();
         for (GridPoint2 obstacle : layout.getObstacles()) {
             Tree tree = new Tree(obstacle);
             trees.add(tree);
             level.addObject(tree);
         }
-        Tank tank = new Tank(layout.getPlayerSpawn(), level);
-        level.addObject(tank);
+
+        List<Tank> tanks = new ArrayList<>();
+        Tank playerTank = new Tank(layout.getPlayerSpawn(), level);
+        tanks.add(playerTank);
+        level.addObject(playerTank);
+        gameLoop.addCommandSource(new KeyboardCommandSource(playerTank, new GdxKeyboard()));
+
+        for (GridPoint2 spawn : layout.getTankSpawns()) {
+            Tank aiTank = new Tank(spawn, level);
+            tanks.add(aiTank);
+            level.addObject(aiTank);
+            gameLoop.addCommandSource(new RandomCommandSource(aiTank));
+        }
 
         // графика
         Batch batch = new SpriteBatch();
@@ -77,22 +91,20 @@ public class GameDesktopLauncher implements ApplicationListener {
         }
         TileMovement tileMovement = new TileMovement(levelGraphics.getGroundLayer(), Interpolation.smooth);
 
-        renderer = new GameRenderer(batch, levelGraphics)
-                .addGraphics(new TankGraphics(tank, tileMovement, TANK_TEXTURE_PATH));
+        renderer = new GameRenderer(batch, levelGraphics);
+        for (Tank tank : tanks) {
+            renderer.addGraphics(new TankGraphics(tank, tileMovement, TANK_TEXTURE_PATH));
+        }
         for (Tree tree : trees) {
             renderer.addGraphics(new TreeGraphics(tree, levelGraphics.getGroundLayer(), TREE_TEXTURE_PATH));
         }
-
-        // ввод
-        inputController = new InputController(new GdxKeyboard())
-                .addHandler(new MovementInputHandler(tank));
     }
 
     @Override
     public void render() {
         float deltaTime = Gdx.graphics.getDeltaTime();
 
-        inputController.handleInput();
+        gameLoop.executeCommands(deltaTime);
         level.update(deltaTime);
         renderer.render();
     }
