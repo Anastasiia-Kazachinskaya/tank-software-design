@@ -81,4 +81,20 @@ class TextLevelParserTest {
     void rejectsEmptyInput() {
         assertThrows(IllegalArgumentException.class, () -> parser.parse(List.of()));
     }
+
+    @Test
+    void readsEnemyTankSpawns() {
+        LevelLayout layout = parser.parse(List.of(
+                "_E_",
+                "X_E"));
+
+        assertEquals(List.of(new GridPoint2(1, 1), new GridPoint2(2, 0)), layout.getTankSpawns());
+    }
+
+    @Test
+    void levelWithoutEnemiesHasNoTankSpawns() {
+        LevelLayout layout = parser.parse(List.of("X__", "___"));
+
+        assertTrue(layout.getTankSpawns().isEmpty());
+    }
 }

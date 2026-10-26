@@ -13,8 +13,9 @@ public class LevelLayout {
     private final int height;
     private final GridPoint2 playerSpawn;
     private final List<GridPoint2> obstacles;
+    private final List<GridPoint2> tankSpawns;
 
-    public LevelLayout(int width, int height, GridPoint2 playerSpawn, List<GridPoint2> obstacles) {
+    public LevelLayout(int width, int height, GridPoint2 playerSpawn, List<GridPoint2> obstacles, List<GridPoint2> tankSpawns) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Level size must be positive: " + width + "x" + height);
         }
@@ -25,6 +26,11 @@ public class LevelLayout {
         this.height = height;
         this.playerSpawn = new GridPoint2(playerSpawn);
         this.obstacles = List.copyOf(obstacles);
+        this.tankSpawns = List.copyOf(tankSpawns);
+    }
+
+    public List<GridPoint2> getTankSpawns() {
+        return tankSpawns;
     }
 
     public int getWidth() {

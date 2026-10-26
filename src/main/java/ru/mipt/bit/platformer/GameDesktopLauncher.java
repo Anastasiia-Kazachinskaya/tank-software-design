@@ -41,6 +41,7 @@ public class GameDesktopLauncher implements ApplicationListener {
     private static final int RANDOM_LEVEL_WIDTH = 10;
     private static final int RANDOM_LEVEL_HEIGHT = 8;
     private static final int RANDOM_OBSTACLE_COUNT = 7;
+    private static final int RANDOM_TANK_COUNT = 3;
 
     private GameRenderer renderer;
     private InputController inputController;
@@ -125,7 +126,8 @@ public class GameDesktopLauncher implements ApplicationListener {
 
     private static LevelSource levelSourceFrom(String[] args) {
         if (args.length > 0 && RANDOM_LEVEL_ARGUMENT.equals(args[0])) {
-            return new RandomLevelSource(RANDOM_LEVEL_WIDTH, RANDOM_LEVEL_HEIGHT, RANDOM_OBSTACLE_COUNT);
+            return new RandomLevelSource(RANDOM_LEVEL_WIDTH, RANDOM_LEVEL_HEIGHT,
+                    RANDOM_OBSTACLE_COUNT, RANDOM_TANK_COUNT);
         }
         return new FileLevelSource(LEVEL_LAYOUT_PATH);
     }
