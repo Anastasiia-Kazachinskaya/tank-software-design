@@ -12,11 +12,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RandomCommandSourceTest {
     private static final float INTERVAL = 1f;
+    private static final float NEVER_SHOOT = 0f;
 
     @Test
     void givesCommandOnFirstCall() {
         List<Direction> commands = new ArrayList<>();
-        RandomCommandSource source = new RandomCommandSource(commands::add, new Random(42), INTERVAL);
+        RandomCommandSource source = new RandomCommandSource(
+                commands::add, () -> { }, new Random(42), INTERVAL, NEVER_SHOOT);
 
         Command command = source.nextCommand(0f);
 
@@ -27,7 +29,8 @@ class RandomCommandSourceTest {
 
     @Test
     void waitsForIntervalBeforeNextCommand() {
-        RandomCommandSource source = new RandomCommandSource(direction -> {}, new Random(42), INTERVAL);
+        RandomCommandSource source = new RandomCommandSource(
+                direction -> { }, () -> { }, new Random(42), INTERVAL, NEVER_SHOOT);
         source.nextCommand(0f);
 
         assertNull(source.nextCommand(INTERVAL / 2));
@@ -37,7 +40,8 @@ class RandomCommandSourceTest {
     @Test
     void choosesOnlyValidDirections() {
         List<Direction> commands = new ArrayList<>();
-        RandomCommandSource source = new RandomCommandSource(commands::add, new Random(1), INTERVAL);
+        RandomCommandSource source = new RandomCommandSource(
+                commands::add, () -> { }, new Random(1), INTERVAL, NEVER_SHOOT);
 
         for (int i = 0; i < 50; i++) {
             Command command = source.nextCommand(INTERVAL);
@@ -54,7 +58,8 @@ class RandomCommandSourceTest {
     @Test
     void eventuallyChoosesEveryDirection() {
         List<Direction> commands = new ArrayList<>();
-        RandomCommandSource source = new RandomCommandSource(commands::add, new Random(1), INTERVAL);
+        RandomCommandSource source = new RandomCommandSource(
+                commands::add, () -> { }, new Random(1), INTERVAL, NEVER_SHOOT);
 
         for (int i = 0; i < 100; i++) {
             source.nextCommand(INTERVAL).execute();
@@ -76,13 +81,64 @@ class RandomCommandSourceTest {
     }
 
     @Test
+    void alwaysShootsWhenProbabilityIsOne() {
+        int[] shots = {0};
+        RandomCommandSource source = new RandomCommandSource(
+                direction -> { }, () -> shots[0]++, new Random(5), INTERVAL, 1f);
+
+        source.nextCommand(INTERVAL).execute();
+
+        assertEquals(1, shots[0]);
+    }
+
+    @Test
+    void neverShootsWhenProbabilityIsZero() {
+        int[] shots = {0};
+        List<Direction> commands = new ArrayList<>();
+        RandomCommandSource source = new RandomCommandSource(
+                commands::add, () -> shots[0]++, new Random(5), INTERVAL, NEVER_SHOOT);
+
+        for (int i = 0; i < 20; i++) {
+            source.nextCommand(INTERVAL).execute();
+        }
+
+        assertEquals(0, shots[0]);
+        assertEquals(20, commands.size());
+    }
+
+    @Test
+    void mixesMovementAndShootingInBetween() {
+        int[] shots = {0};
+        List<Direction> moves = new ArrayList<>();
+        RandomCommandSource source = new RandomCommandSource(
+                moves::add, () -> shots[0]++, new Random(3), INTERVAL, 0.5f);
+
+        for (int i = 0; i < 100; i++) {
+            source.nextCommand(INTERVAL).execute();
+        }
+
+        assertEquals(100, shots[0] + moves.size());
+        assertTrue(shots[0] > 0, "AI ни разу не выстрелил");
+        assertFalse(moves.isEmpty(), "AI ни разу не поехал");
+    }
+
+    @Test
     void rejectsNonPositiveInterval() {
         assertThrows(IllegalArgumentException.class,
-                () -> new RandomCommandSource(direction -> {}, new Random(), 0f));
+                () -> new RandomCommandSource(direction -> { }, () -> { }, new Random(), 0f, NEVER_SHOOT));
+    }
+
+    @Test
+    void rejectsInvalidShootProbability() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new RandomCommandSource(direction -> { }, () -> { }, new Random(), INTERVAL, 1.5f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new RandomCommandSource(direction -> { }, () -> { }, new Random(), INTERVAL, -0.1f));
     }
 
     private void collect(List<Direction> target, Random random) {
-        RandomCommandSource source = new RandomCommandSource(target::add, random, INTERVAL);
+        RandomCommandSource source = new RandomCommandSource(
+                target::add, () -> { }, random, INTERVAL, NEVER_SHOOT);
         for (int i = 0; i < 10; i++) {
             source.nextCommand(INTERVAL).execute();
         }

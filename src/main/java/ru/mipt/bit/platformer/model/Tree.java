@@ -18,5 +18,10 @@ public class Tree implements GameObject {
     public boolean occupies(GridPoint2 coordinates) {
         return this.coordinates.equals(coordinates);
     }
+
+    @Override
+    public boolean blocksMovement() {
+        return true;
+    }
 }
 

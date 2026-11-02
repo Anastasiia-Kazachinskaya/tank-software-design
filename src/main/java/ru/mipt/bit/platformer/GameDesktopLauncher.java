@@ -69,16 +69,18 @@ public class GameDesktopLauncher implements ApplicationListener {
         }
 
         List<Tank> tanks = new ArrayList<>();
-        Tank playerTank = new Tank(layout.getPlayerSpawn(), level);
+        Tank playerTank = new Tank(layout.getPlayerSpawn(), level, level,
+                Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, Tank.DEFAULT_HEALTH);
         tanks.add(playerTank);
         level.addObject(playerTank);
-        gameLoop.addCommandSource(new KeyboardCommandSource(playerTank, new GdxKeyboard()));
+        gameLoop.addCommandSource(new KeyboardCommandSource(playerTank, playerTank, new GdxKeyboard()));
 
         for (GridPoint2 spawn : layout.getTankSpawns()) {
-            Tank aiTank = new Tank(spawn, level);
+            Tank aiTank = new Tank(spawn, level, level,
+                    Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, Tank.DEFAULT_HEALTH);
             tanks.add(aiTank);
             level.addObject(aiTank);
-            gameLoop.addCommandSource(new RandomCommandSource(aiTank));
+            gameLoop.addCommandSource(new RandomCommandSource(aiTank, aiTank));
         }
 
         // графика

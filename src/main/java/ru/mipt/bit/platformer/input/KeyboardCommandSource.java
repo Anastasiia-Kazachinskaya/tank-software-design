@@ -5,6 +5,8 @@ import ru.mipt.bit.platformer.model.CommandSource;
 import ru.mipt.bit.platformer.model.Direction;
 import ru.mipt.bit.platformer.model.MoveCommand;
 import ru.mipt.bit.platformer.model.Movable;
+import ru.mipt.bit.platformer.model.Shootable;
+import ru.mipt.bit.platformer.model.ShootCommand;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,13 +18,17 @@ public class KeyboardCommandSource implements CommandSource {
     private final Movable movable;
     private final Keyboard keyboard;
     private final Map<Integer, Direction> keyBindings;
+    private static final int SHOOT_KEY = SPACE;
+    private final Shootable shooter;
 
-    public KeyboardCommandSource(Movable movable, Keyboard keyboard) {
-        this(movable, keyboard, defaultKeyBindings());
+    public KeyboardCommandSource(Movable movable, Shootable shooter, Keyboard keyboard) {
+        this(movable, shooter, keyboard, defaultKeyBindings());
     }
 
-    public KeyboardCommandSource(Movable movable, Keyboard keyboard, Map<Integer, Direction> keyBindings) {
+    public KeyboardCommandSource(Movable movable, Shootable shooter, Keyboard keyboard,
+                                 Map<Integer, Direction> keyBindings) {
         this.movable = movable;
+        this.shooter = shooter;
         this.keyboard = keyboard;
         this.keyBindings = new LinkedHashMap<>(keyBindings);
     }
@@ -42,6 +48,9 @@ public class KeyboardCommandSource implements CommandSource {
 
     @Override
     public Command nextCommand(float deltaTime) {
+        if (keyboard.isKeyPressed(SHOOT_KEY)) {
+            return new ShootCommand(shooter);
+        }
         for (Map.Entry<Integer, Direction> binding : keyBindings.entrySet()) {
             if (keyboard.isKeyPressed(binding.getKey())) {
                 return new MoveCommand(movable, binding.getValue());

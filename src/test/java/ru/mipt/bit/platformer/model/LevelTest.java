@@ -102,4 +102,67 @@ class LevelTest {
         assertFalse(second.isMoving());
         assertEquals(new GridPoint2(7, 5), second.getCoordinates());
     }
+    @Test
+    void bulletDamagesTankAndDisappears() {
+        Tank target = new Tank(new GridPoint2(5, 5), level);
+        Bullet bullet = new Bullet(new GridPoint2(5, 5), Direction.RIGHT);
+        level.addObject(target).addObject(bullet);
+
+        level.update(0.01f);
+
+        assertEquals(Tank.DEFAULT_HEALTH - Bullet.DEFAULT_DAMAGE, target.getHealth());
+        assertFalse(level.getObjects().contains(bullet));
+    }
+
+    @Test
+    void destroyedTankIsRemovedFromLevel() {
+        Tank weak = new Tank(new GridPoint2(5, 5), level, Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, 1);
+        level.addObject(weak).addObject(new Bullet(new GridPoint2(5, 5), Direction.RIGHT));
+
+        level.update(0.01f);
+
+        assertTrue(weak.isDestroyed());
+        assertFalse(level.getObjects().contains(weak));
+    }
+
+    @Test
+    void bulletDisappearsOnTreeButTreeSurvives() {
+        Bullet bullet = new Bullet(new GridPoint2(1, 3), Direction.UP);   // дерево стоит в (1,3)
+        level.addObject(bullet);
+
+        level.update(0.01f);
+
+        assertFalse(level.getObjects().contains(bullet));
+        assertEquals(1, level.getObjects().size());
+    }
+
+    @Test
+    void bulletsDestroyEachOther() {
+        Bullet first = new Bullet(new GridPoint2(5, 5), Direction.RIGHT);
+        Bullet second = new Bullet(new GridPoint2(5, 5), Direction.LEFT);
+        level.addObject(first).addObject(second);
+
+        level.update(0.01f);
+
+        assertTrue(first.isDestroyed());
+        assertTrue(second.isDestroyed());
+        assertFalse(level.getObjects().contains(first));
+    }
+
+    @Test
+    void bulletLeavingLevelIsRemoved() {
+        Bullet bullet = new Bullet(new GridPoint2(9, 5), Direction.RIGHT);
+        level.addObject(bullet);
+
+        level.update(Bullet.DEFAULT_FLIGHT_DURATION_SECONDS);
+
+        assertFalse(level.getObjects().contains(bullet));
+    }
+
+    @Test
+    void bulletDoesNotBlockTankMovement() {
+        level.addObject(new Bullet(new GridPoint2(6, 5), Direction.UP));
+
+        assertTrue(level.isFree(new GridPoint2(6, 5)));
+    }
 }

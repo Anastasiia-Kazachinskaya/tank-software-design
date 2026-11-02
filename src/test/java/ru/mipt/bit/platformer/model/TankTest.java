@@ -164,5 +164,36 @@ class TankTest {
         assertFalse(tank.occupies(new GridPoint2(0, 0)));
         assertTrue(tank.occupies(new GridPoint2(1, 0)));
     }
+
+    @Test
+    void startsWithDefaultHealthAndAlive() {
+        assertEquals(Tank.DEFAULT_HEALTH, tank.getHealth());
+        assertFalse(tank.isDestroyed());
+    }
+
+    @Test
+    void damageReducesHealth() {
+        tank.takeDamage(1);
+
+        assertEquals(Tank.DEFAULT_HEALTH - 1, tank.getHealth());
+        assertFalse(tank.isDestroyed());
+    }
+
+    @Test
+    void isDestroyedWhenHealthRunsOut() {
+        Tank weak = new Tank(new GridPoint2(5, 5), level, Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, 2);
+
+        weak.takeDamage(2);
+
+        assertEquals(0, weak.getHealth());
+        assertTrue(weak.isDestroyed());
+    }
+
+    @Test
+    void rejectsInvalidHealthAndDamage() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Tank(new GridPoint2(0, 0), level, 1f, 0));
+        assertThrows(IllegalArgumentException.class, () -> tank.takeDamage(-1));
+    }
 }
 

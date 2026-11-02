@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.GridPoint2;
 public interface GameObject {
     GridPoint2 getCoordinates();
 
-    /** Занимает ли объект эту клетку. Едущий танк занимает сразу две. */
     boolean occupies(GridPoint2 coordinates);
+
+    boolean blocksMovement();
 }
