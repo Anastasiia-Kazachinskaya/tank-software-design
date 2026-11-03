@@ -8,15 +8,18 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Interpolation;
+import ru.mipt.bit.platformer.graphics.BulletGraphicsFactory;
 import ru.mipt.bit.platformer.graphics.GameRenderer;
+import ru.mipt.bit.platformer.graphics.GraphicsRegistry;
 import ru.mipt.bit.platformer.graphics.LevelGraphics;
-import ru.mipt.bit.platformer.graphics.TankGraphics;
-import ru.mipt.bit.platformer.graphics.TreeGraphics;
+import ru.mipt.bit.platformer.graphics.TankGraphicsFactory;
+import ru.mipt.bit.platformer.graphics.TreeGraphicsFactory;
 import ru.mipt.bit.platformer.input.GdxKeyboard;
 import ru.mipt.bit.platformer.input.KeyboardCommandSource;
 import ru.mipt.bit.platformer.level.FileLevelSource;
 import ru.mipt.bit.platformer.level.RandomLevelSource;
 import ru.mipt.bit.platformer.model.GameLoop;
+import ru.mipt.bit.platformer.model.GameObject;
 import ru.mipt.bit.platformer.model.Level;
 import ru.mipt.bit.platformer.model.LevelLayout;
 import ru.mipt.bit.platformer.model.LevelSource;
@@ -25,18 +28,16 @@ import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.Tree;
 import ru.mipt.bit.platformer.util.TileMovement;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Точка входа: собирает модель, графику и ввод и крутит игровой цикл
  * (команды -> обновление модели -> отрисовка). Своей логики не содержит.
  */
 public class GameDesktopLauncher implements ApplicationListener {
-    private static final String TANK_TEXTURE_PATH = "images/tank_blue.png";
-    private static final String TREE_TEXTURE_PATH = "images/greenTree.png";
     private static final String MAP_PATH = "level.tmx";
     private static final String LEVEL_LAYOUT_PATH = "level.txt";
+    private static final String TANK_TEXTURE_PATH = "images/tank_blue.png";
+    private static final String TREE_TEXTURE_PATH = "images/greenTree.png";
+    private static final String BULLET_TEXTURE_PATH = "images/brick.png";
     private static final String RANDOM_LEVEL_ARGUMENT = "random";
     private static final int RANDOM_LEVEL_WIDTH = 10;
     private static final int RANDOM_LEVEL_HEIGHT = 8;
@@ -61,24 +62,18 @@ public class GameDesktopLauncher implements ApplicationListener {
         level = new Level(layout.getWidth(), layout.getHeight());
         gameLoop = new GameLoop();
 
-        List<Tree> trees = new ArrayList<>();
         for (GridPoint2 obstacle : layout.getObstacles()) {
-            Tree tree = new Tree(obstacle);
-            trees.add(tree);
-            level.addObject(tree);
+            level.addObject(new Tree(obstacle));
         }
 
-        List<Tank> tanks = new ArrayList<>();
         Tank playerTank = new Tank(layout.getPlayerSpawn(), level, level,
                 Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, Tank.DEFAULT_HEALTH);
-        tanks.add(playerTank);
         level.addObject(playerTank);
         gameLoop.addCommandSource(new KeyboardCommandSource(playerTank, playerTank, new GdxKeyboard()));
 
         for (GridPoint2 spawn : layout.getTankSpawns()) {
             Tank aiTank = new Tank(spawn, level, level,
                     Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, Tank.DEFAULT_HEALTH);
-            tanks.add(aiTank);
             level.addObject(aiTank);
             gameLoop.addCommandSource(new RandomCommandSource(aiTank, aiTank));
         }
@@ -93,13 +88,13 @@ public class GameDesktopLauncher implements ApplicationListener {
         }
         TileMovement tileMovement = new TileMovement(levelGraphics.getGroundLayer(), Interpolation.smooth);
 
-        renderer = new GameRenderer(batch, levelGraphics);
-        for (Tank tank : tanks) {
-            renderer.addGraphics(new TankGraphics(tank, tileMovement, TANK_TEXTURE_PATH));
-        }
-        for (Tree tree : trees) {
-            renderer.addGraphics(new TreeGraphics(tree, levelGraphics.getGroundLayer(), TREE_TEXTURE_PATH));
-        }
+        GraphicsRegistry graphicsRegistry = new GraphicsRegistry()
+                .register(new TankGraphicsFactory(tileMovement, TANK_TEXTURE_PATH))
+                .register(new BulletGraphicsFactory(tileMovement, BULLET_TEXTURE_PATH))
+                .register(new TreeGraphicsFactory(levelGraphics.getGroundLayer(), TREE_TEXTURE_PATH));
+
+        renderer = new GameRenderer(batch, levelGraphics, graphicsRegistry);
+        level.addListener(renderer);
     }
 
     @Override

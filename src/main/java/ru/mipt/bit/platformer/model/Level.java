@@ -10,6 +10,7 @@ public class Level implements Obstacles, ObjectSpawner {
     private final int width;
     private final int height;
     private final List<GameObject> objects = new ArrayList<>();
+    private final List<LevelListener> listeners = new ArrayList<>();
 
     public Level(int width, int height) {
         if (width <= 0 || height <= 0) {
@@ -21,6 +22,9 @@ public class Level implements Obstacles, ObjectSpawner {
 
     public Level addObject(GameObject object) {
         objects.add(object);
+        for (LevelListener listener : List.copyOf(listeners)) {
+            listener.onObjectAdded(object);
+        }
         return this;
     }
 
@@ -67,7 +71,14 @@ public class Level implements Obstacles, ObjectSpawner {
     }
 
     private void removeDestroyed() {
-        objects.removeIf(object -> object instanceof Destructible && ((Destructible) object).isDestroyed());
+        for (GameObject object : List.copyOf(objects)) {
+            if (object instanceof Destructible && ((Destructible) object).isDestroyed()) {
+                objects.remove(object);
+                for (LevelListener listener : List.copyOf(listeners)) {
+                    listener.onObjectRemoved(object);
+                }
+            }
+        }
     }
 
     public int getWidth() {
@@ -99,5 +110,13 @@ public class Level implements Obstacles, ObjectSpawner {
     @Override
     public void spawn(GameObject object) {
         addObject(object);
+    }
+    /** Подписывает слушателя и сразу рассказывает ему про уже существующие объекты. */
+    public Level addListener(LevelListener listener) {
+        listeners.add(listener);
+        for (GameObject object : List.copyOf(objects)) {
+            listener.onObjectAdded(object);
+        }
+        return this;
     }
 }

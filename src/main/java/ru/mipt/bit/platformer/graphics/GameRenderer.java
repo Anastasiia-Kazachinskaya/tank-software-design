@@ -3,28 +3,41 @@ package ru.mipt.bit.platformer.graphics;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.utils.Disposable;
+import ru.mipt.bit.platformer.model.GameObject;
+import ru.mipt.bit.platformer.model.LevelListener;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 
 /**
- * Рисует кадр целиком: очищает экран, рисует карту, затем все объекты.
- * Не знает конкретных типов объектов — только интерфейс Graphics.
+ * Рисует кадр целиком: очищает экран, рисует фон, затем графику всех объектов.
+ * Наблюдатель уровня: узнаёт о появлении и исчезновении объектов.
  */
-public class GameRenderer implements Disposable {
+public class GameRenderer implements Disposable, LevelListener {
     private final Batch batch;
-    private final List<Graphics> objectGraphics = new ArrayList<>();
     private final Background background;
+    private final GraphicsRegistry graphicsRegistry;
+    private final Map<GameObject, Graphics> objectGraphics = new LinkedHashMap<>();
 
-    public GameRenderer(Batch batch, Background background) {
+    public GameRenderer(Batch batch, Background background, GraphicsRegistry graphicsRegistry) {
         this.batch = batch;
         this.background = background;
+        this.graphicsRegistry = graphicsRegistry;
     }
-    public GameRenderer addGraphics(Graphics graphics) {
-        objectGraphics.add(graphics);
-        return this;
+
+    @Override
+    public void onObjectAdded(GameObject object) {
+        objectGraphics.computeIfAbsent(object, graphicsRegistry::create);
+    }
+
+    @Override
+    public void onObjectRemoved(GameObject object) {
+        Graphics graphics = objectGraphics.remove(object);
+        if (graphics != null) {
+            graphics.dispose();
+        }
     }
 
     public void render() {
@@ -34,18 +47,18 @@ public class GameRenderer implements Disposable {
         background.render();
 
         batch.begin();
-        for (Graphics graphics : objectGraphics) {
+        for (Graphics graphics : objectGraphics.values()) {
             graphics.render(batch);
         }
         batch.end();
     }
 
-    /** Владеет всем, что в него добавили, и освобождает это сам. */
     @Override
     public void dispose() {
-        for (Graphics graphics : objectGraphics) {
+        for (Graphics graphics : objectGraphics.values()) {
             graphics.dispose();
         }
+        objectGraphics.clear();
         background.dispose();
         batch.dispose();
     }
