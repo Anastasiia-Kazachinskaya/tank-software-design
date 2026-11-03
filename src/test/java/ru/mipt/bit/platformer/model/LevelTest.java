@@ -3,11 +3,28 @@ package ru.mipt.bit.platformer.model;
 import com.badlogic.gdx.math.GridPoint2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class LevelTest {
     private Level level;
+
+    private static class RecordingListener implements LevelListener {
+        private final List<GameObject> added = new ArrayList<>();
+        private final List<GameObject> removed = new ArrayList<>();
+
+        @Override
+        public void onObjectAdded(GameObject object) {
+            added.add(object);
+        }
+
+        @Override
+        public void onObjectRemoved(GameObject object) {
+            removed.add(object);
+        }
+    }
 
     @BeforeEach
     void setUp() {
@@ -164,5 +181,56 @@ class LevelTest {
         level.addObject(new Bullet(new GridPoint2(6, 5), Direction.UP));
 
         assertTrue(level.isFree(new GridPoint2(6, 5)));
+    }
+    @Test
+    void listenerLearnsAboutObjectsAddedLater() {
+        RecordingListener listener = new RecordingListener();
+        level.addListener(listener);
+        listener.added.clear();   // забываем про дерево, созданное в setUp
+
+        Tank tank = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(tank);
+
+        assertEquals(List.of(tank), listener.added);
+    }
+
+    @Test
+    void subscribingReplaysExistingObjects() {
+        Tank tank = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(tank);
+
+        RecordingListener listener = new RecordingListener();
+        level.addListener(listener);
+
+        // дерево из setUp и танк — подписка догоняет того, кто пришёл позже
+        assertEquals(2, listener.added.size());
+        assertTrue(listener.added.contains(tank));
+    }
+
+    @Test
+    void listenerLearnsAboutDestroyedObjects() {
+        Tank weak = new Tank(new GridPoint2(5, 5), level, Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, 1);
+        Bullet bullet = new Bullet(new GridPoint2(5, 5), Direction.RIGHT);
+        level.addObject(weak).addObject(bullet);
+        RecordingListener listener = new RecordingListener();
+        level.addListener(listener);
+
+        level.update(0.01f);
+
+        assertTrue(listener.removed.contains(weak), "танк не исчез");
+        assertTrue(listener.removed.contains(bullet), "пуля не исчезла");
+    }
+
+    @Test
+    void allListenersAreNotified() {
+        RecordingListener first = new RecordingListener();
+        RecordingListener second = new RecordingListener();
+        level.addListener(first).addListener(second);
+
+        Tank tank = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(tank);
+
+        assertTrue(first.added.contains(tank));
+        assertTrue(second.added.contains(tank));
     }
 }
