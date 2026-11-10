@@ -195,5 +195,25 @@ class TankTest {
                 () -> new Tank(new GridPoint2(0, 0), level, 1f, 0));
         assertThrows(IllegalArgumentException.class, () -> tank.takeDamage(-1));
     }
+    @Test
+    void maxHealthDoesNotChangeWithDamage() {
+        tank.takeDamage(1);
+
+        assertEquals(Tank.DEFAULT_HEALTH, tank.getMaxHealth());
+        assertEquals(Tank.DEFAULT_HEALTH - 1, tank.getHealth());
+    }
+
+    @Test
+    void healthFractionGoesFromOneToZero() {
+        Tank tank = new Tank(new GridPoint2(5, 5), level, Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, 100);
+
+        assertEquals(1f, tank.getHealthFraction(), 1e-5f);
+
+        tank.takeDamage(25);
+        assertEquals(0.75f, tank.getHealthFraction(), 1e-5f);
+
+        tank.takeDamage(100);
+        assertEquals(0f, tank.getHealthFraction(), 1e-5f);
+    }
 }
 

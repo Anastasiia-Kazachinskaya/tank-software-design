@@ -14,6 +14,13 @@ class FakeKeyboard implements Keyboard {
         return this;
     }
 
+    FakeKeyboard release(int... keyCodes) {
+        for (int keyCode : keyCodes) {
+            pressed.remove(keyCode);
+        }
+        return this;
+    }
+
     @Override
     public boolean isKeyPressed(int keyCode) {
         return pressed.contains(keyCode);

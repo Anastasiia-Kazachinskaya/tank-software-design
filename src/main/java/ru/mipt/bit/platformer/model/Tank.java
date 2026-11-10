@@ -9,10 +9,10 @@ import static com.badlogic.gdx.math.MathUtils.isEqual;
  * Модель танка: клетка, клетка назначения, прогресс перемещения, направление,
  * здоровье и перезарядка. Ничего не знает о текстурах и отрисовке.
  */
-public class Tank implements GameObject, Movable, Updatable, Destructible, Shootable {
+public class Tank implements GameObject, Movable, Updatable, Destructible, Shootable, HealthSource {
     public static final float DEFAULT_MOVEMENT_DURATION_SECONDS = 0.4f;
     public static final float DEFAULT_RELOAD_SECONDS = 1f;
-    public static final int DEFAULT_HEALTH = 3;
+    public static final int DEFAULT_HEALTH = 100;
     private static final float MOVEMENT_FINISHED = 1f;
 
     private final Obstacles obstacles;
@@ -20,6 +20,7 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
     private final float movementDurationSeconds;
     private final GridPoint2 coordinates;
     private final GridPoint2 destinationCoordinates;
+    private final int maxHealth;
 
     private int health;
     private float movementProgress = MOVEMENT_FINISHED;
@@ -50,6 +51,7 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
         this.spawner = spawner;
         this.movementDurationSeconds = movementDurationSeconds;
         this.health = health;
+        this.maxHealth = health;
         this.coordinates = new GridPoint2(initialCoordinates);
         this.destinationCoordinates = new GridPoint2(initialCoordinates);
     }
@@ -75,6 +77,13 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
         return health;
     }
 
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    public float getHealthFraction() {
+        return Math.max(0f, (float) health / maxHealth);
+    }
     public boolean isMoving() {
         return !isEqual(movementProgress, MOVEMENT_FINISHED);
     }

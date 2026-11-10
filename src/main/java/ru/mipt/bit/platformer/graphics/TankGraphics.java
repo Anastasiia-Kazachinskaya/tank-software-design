@@ -42,4 +42,9 @@ public class TankGraphics implements Graphics {
     public void dispose() {
         texture.dispose();
     }
+
+    @Override
+    public Rectangle getBounds() {
+        return rectangle;
+    }
 }

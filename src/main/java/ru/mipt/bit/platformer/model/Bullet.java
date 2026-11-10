@@ -11,7 +11,7 @@ import static com.badlogic.gdx.math.MathUtils.isEqual;
  */
 public class Bullet implements GameObject, Updatable, Destructible {
     public static final float DEFAULT_FLIGHT_DURATION_SECONDS = 0.1f;
-    public static final int DEFAULT_DAMAGE = 1;
+    public static final int DEFAULT_DAMAGE = 25;
     private static final float FLIGHT_FINISHED = 1f;
 
     private final Direction direction;

@@ -33,4 +33,9 @@ public class TreeGraphics implements Graphics {
     public void dispose() {
         texture.dispose();
     }
+
+    @Override
+    public Rectangle getBounds() {
+        return rectangle;
+    }
 }

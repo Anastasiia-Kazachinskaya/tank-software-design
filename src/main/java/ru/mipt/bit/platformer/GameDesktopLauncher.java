@@ -27,11 +27,10 @@ import ru.mipt.bit.platformer.model.RandomCommandSource;
 import ru.mipt.bit.platformer.model.Tank;
 import ru.mipt.bit.platformer.model.Tree;
 import ru.mipt.bit.platformer.util.TileMovement;
+import com.badlogic.gdx.Input;
+import ru.mipt.bit.platformer.input.KeyPressCommandSource;
+import ru.mipt.bit.platformer.model.ToggleHealthBarsCommand;
 
-/**
- * Точка входа: собирает модель, графику и ввод и крутит игровой цикл
- * (команды -> обновление модели -> отрисовка). Своей логики не содержит.
- */
 public class GameDesktopLauncher implements ApplicationListener {
     private static final String MAP_PATH = "level.tmx";
     private static final String LEVEL_LAYOUT_PATH = "level.txt";
@@ -95,6 +94,9 @@ public class GameDesktopLauncher implements ApplicationListener {
 
         renderer = new GameRenderer(batch, levelGraphics, graphicsRegistry);
         level.addListener(renderer);
+
+        gameLoop.addCommandSource(new KeyPressCommandSource(
+                Input.Keys.L, new GdxKeyboard(), new ToggleHealthBarsCommand(renderer)));
     }
 
     @Override
@@ -105,6 +107,7 @@ public class GameDesktopLauncher implements ApplicationListener {
         level.update(deltaTime);
         renderer.render();
     }
+
 
     @Override
     public void resize(int width, int height) {
