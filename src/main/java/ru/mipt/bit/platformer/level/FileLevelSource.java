@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /** Читает расстановку уровня из текстового файла в ресурсах. */
+
+/** Adapter (driven) — реализация порта LevelSource поверх файла в ресурсах. */
 public class FileLevelSource implements LevelSource {
     private final String resourceName;
     private final TextLevelParser parser;

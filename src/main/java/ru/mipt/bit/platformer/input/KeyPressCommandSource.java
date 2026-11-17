@@ -3,6 +3,8 @@ package ru.mipt.bit.platformer.input;
 import ru.mipt.bit.platformer.model.Command;
 import ru.mipt.bit.platformer.model.CommandSource;
 
+/** Adapter (driving) — выдаёт команду один раз на нажатие клавиши. */
+
 public class KeyPressCommandSource implements CommandSource {
     private final int keyCode;
     private final Keyboard keyboard;

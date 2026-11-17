@@ -13,6 +13,8 @@ import java.util.Map;
 
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 
+/** Adapter (driven) — реализует порты LevelListener и HealthBarsToggle, переводя события домена в объекты libGDX. */
+
 public class GameRenderer implements Disposable, LevelListener, HealthBarsToggle {
     private final Batch batch;
     private final Background background;

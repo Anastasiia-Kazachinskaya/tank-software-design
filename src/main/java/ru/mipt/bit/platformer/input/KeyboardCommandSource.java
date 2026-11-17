@@ -14,6 +14,8 @@ import java.util.Map;
 import static com.badlogic.gdx.Input.Keys.*;
 
 /** Стратегия игрока: команда берётся с клавиатуры. */
+
+/** Adapter (driving) — превращает нажатия клавиш в команды игры. */
 public class KeyboardCommandSource implements CommandSource {
     private final Movable movable;
     private final Keyboard keyboard;

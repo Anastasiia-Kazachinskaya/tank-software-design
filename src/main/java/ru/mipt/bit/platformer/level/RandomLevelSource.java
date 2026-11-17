@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Random;
 
 /** Расставляет игрока и препятствия случайно по полю заданного размера. */
+
+/** Adapter (driven) — реализация порта LevelSource через случайную генерацию. */
 public class RandomLevelSource implements LevelSource {
     private final int width;
     private final int height;
