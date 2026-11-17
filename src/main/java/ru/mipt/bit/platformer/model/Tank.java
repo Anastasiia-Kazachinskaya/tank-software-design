@@ -7,7 +7,8 @@ import static com.badlogic.gdx.math.MathUtils.isEqual;
 
 /**
  * Модель танка: клетка, клетка назначения, прогресс перемещения, направление,
- * здоровье и перезарядка. Ничего не знает о текстурах и отрисовке.
+ * здоровье и перезарядка. Скорость и возможность стрелять зависят от текущего
+ * состояния, которое определяется по доле оставшихся жизней.
  */
 public class Tank implements GameObject, Movable, Updatable, Destructible, Shootable, HealthSource {
     public static final float DEFAULT_MOVEMENT_DURATION_SECONDS = 0.4f;
@@ -17,6 +18,7 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
 
     private final Obstacles obstacles;
     private final ObjectSpawner spawner;
+    private final TankStateSelector stateSelector;
     private final float movementDurationSeconds;
     private final GridPoint2 coordinates;
     private final GridPoint2 destinationCoordinates;
@@ -24,23 +26,32 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
 
     private int health;
     private float movementProgress = MOVEMENT_FINISHED;
-    private float secondsSinceLastShot = DEFAULT_RELOAD_SECONDS;   // стрелять можно сразу
+    private float secondsSinceLastShot = DEFAULT_RELOAD_SECONDS;
     private Direction direction = Direction.RIGHT;
 
     public Tank(GridPoint2 initialCoordinates, Obstacles obstacles) {
-        this(initialCoordinates, obstacles, ObjectSpawner.NONE, DEFAULT_MOVEMENT_DURATION_SECONDS, DEFAULT_HEALTH);
+        this(initialCoordinates, obstacles, ObjectSpawner.NONE,
+                DEFAULT_MOVEMENT_DURATION_SECONDS, DEFAULT_HEALTH);
     }
 
     public Tank(GridPoint2 initialCoordinates, Obstacles obstacles, float movementDurationSeconds) {
-        this(initialCoordinates, obstacles, ObjectSpawner.NONE, movementDurationSeconds, DEFAULT_HEALTH);
+        this(initialCoordinates, obstacles, ObjectSpawner.NONE,
+                movementDurationSeconds, DEFAULT_HEALTH);
     }
 
-    public Tank(GridPoint2 initialCoordinates, Obstacles obstacles, float movementDurationSeconds, int health) {
+    public Tank(GridPoint2 initialCoordinates, Obstacles obstacles,
+                float movementDurationSeconds, int health) {
         this(initialCoordinates, obstacles, ObjectSpawner.NONE, movementDurationSeconds, health);
     }
 
     public Tank(GridPoint2 initialCoordinates, Obstacles obstacles, ObjectSpawner spawner,
                 float movementDurationSeconds, int health) {
+        this(initialCoordinates, obstacles, spawner, new HealthTankStateSelector(),
+                movementDurationSeconds, health);
+    }
+
+    public Tank(GridPoint2 initialCoordinates, Obstacles obstacles, ObjectSpawner spawner,
+                TankStateSelector stateSelector, float movementDurationSeconds, int health) {
         if (movementDurationSeconds <= 0f) {
             throw new IllegalArgumentException("Movement duration must be positive");
         }
@@ -49,6 +60,7 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
         }
         this.obstacles = obstacles;
         this.spawner = spawner;
+        this.stateSelector = stateSelector;
         this.movementDurationSeconds = movementDurationSeconds;
         this.health = health;
         this.maxHealth = health;
@@ -81,9 +93,22 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
         return maxHealth;
     }
 
+    /** Доля оставшегося здоровья от 0 до 1 — для полоски жизней и выбора состояния. */
+    @Override
     public float getHealthFraction() {
         return Math.max(0f, (float) health / maxHealth);
     }
+
+    /** Текущее состояние вычисляется каждый раз, поэтому всегда соответствует здоровью. */
+    public TankState getState() {
+        return stateSelector.selectState(getHealthFraction());
+    }
+
+    /** Длительность одного шага с учётом состояния. */
+    public float getMovementDuration() {
+        return movementDurationSeconds * getState().getMovementDurationMultiplier();
+    }
+
     public boolean isMoving() {
         return !isEqual(movementProgress, MOVEMENT_FINISHED);
     }
@@ -112,13 +137,12 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
     }
 
     public boolean canShoot() {
-        return !isDestroyed() && secondsSinceLastShot >= DEFAULT_RELOAD_SECONDS;
+        TankState state = getState();
+        return !isDestroyed()
+                && state.canShoot()
+                && secondsSinceLastShot >= DEFAULT_RELOAD_SECONDS * state.getReloadMultiplier();
     }
 
-    /**
-     * Поворачивает танк и, если он стоит на месте и клетка свободна,
-     * начинает движение в соседнюю клетку.
-     */
     @Override
     public void move(Direction direction) {
         this.direction = direction;
@@ -134,7 +158,6 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
         }
     }
 
-    /** Пуля рождается в соседней клетке по направлению танка и летит туда же. */
     @Override
     public void shoot() {
         if (!canShoot()) {
@@ -147,7 +170,7 @@ public class Tank implements GameObject, Movable, Updatable, Destructible, Shoot
     @Override
     public void update(float deltaTime) {
         secondsSinceLastShot += deltaTime;
-        movementProgress = clamp(movementProgress + deltaTime / movementDurationSeconds, 0f, MOVEMENT_FINISHED);
+        movementProgress = clamp(movementProgress + deltaTime / getMovementDuration(), 0f, MOVEMENT_FINISHED);
 
         if (!isMoving()) {
             coordinates.set(destinationCoordinates);

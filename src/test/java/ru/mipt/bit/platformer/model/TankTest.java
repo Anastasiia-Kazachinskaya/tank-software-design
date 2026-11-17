@@ -215,5 +215,51 @@ class TankTest {
         tank.takeDamage(100);
         assertEquals(0f, tank.getHealthFraction(), 1e-5f);
     }
+    @Test
+    void undamagedTankIsLightAndFast() {
+        assertEquals("light", tank.getState().getName());
+        assertEquals(Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, tank.getMovementDuration(), 1e-5f);
+    }
+
+    @Test
+    void damagedTankBecomesSlower() {
+        tank.takeDamage(50);   // 50% жизней
+
+        assertEquals("medium", tank.getState().getName());
+        assertEquals(Tank.DEFAULT_MOVEMENT_DURATION_SECONDS * 2, tank.getMovementDuration(), 1e-5f);
+    }
+
+    @Test
+    void almostDeadTankCrawlsAndCannotShoot() {
+        tank.takeDamage(90);   // 10% жизней
+
+        assertEquals("heavy", tank.getState().getName());
+        assertEquals(Tank.DEFAULT_MOVEMENT_DURATION_SECONDS * 3, tank.getMovementDuration(), 1e-5f);
+        assertFalse(tank.canShoot());
+    }
+
+    @Test
+    void slowedTankTakesLongerToCrossCell() {
+        tank.takeDamage(50);   // вдвое медленнее
+        tank.move(Direction.RIGHT);
+
+        tank.update(Tank.DEFAULT_MOVEMENT_DURATION_SECONDS);
+        assertTrue(tank.isMoving(), "обычного времени шага уже не хватает");
+
+        tank.update(Tank.DEFAULT_MOVEMENT_DURATION_SECONDS);
+        assertFalse(tank.isMoving());
+        assertEquals(new GridPoint2(1, 0), tank.getCoordinates());
+    }
+
+    @Test
+    void stateChangesAsHealthDrops() {
+        assertEquals("light", tank.getState().getName());
+
+        tank.takeDamage(40);
+        assertEquals("medium", tank.getState().getName());
+
+        tank.takeDamage(50);
+        assertEquals("heavy", tank.getState().getName());
+    }
 }
 
