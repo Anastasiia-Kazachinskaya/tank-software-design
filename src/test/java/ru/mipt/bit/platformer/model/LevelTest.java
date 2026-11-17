@@ -1,0 +1,236 @@
+package ru.mipt.bit.platformer.model;
+
+import com.badlogic.gdx.math.GridPoint2;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class LevelTest {
+    private Level level;
+
+    private static class RecordingListener implements LevelListener {
+        private final List<GameObject> added = new ArrayList<>();
+        private final List<GameObject> removed = new ArrayList<>();
+
+        @Override
+        public void onObjectAdded(GameObject object) {
+            added.add(object);
+        }
+
+        @Override
+        public void onObjectRemoved(GameObject object) {
+            removed.add(object);
+        }
+    }
+
+    @BeforeEach
+    void setUp() {
+        level = new Level(10, 8).addObject(new Tree(new GridPoint2(1, 3)));
+    }
+
+    @Test
+    void emptyCellInsideLevelIsFree() {
+        assertTrue(level.isFree(new GridPoint2(0, 0)));
+        assertTrue(level.isFree(new GridPoint2(9, 7)));
+        assertTrue(level.isFree(new GridPoint2(1, 2)));
+    }
+
+    @Test
+    void cellWithObstacleIsNotFree() {
+        assertFalse(level.isFree(new GridPoint2(1, 3)));
+    }
+
+    @Test
+    void cellsOutsideLevelAreNotFree() {
+        assertFalse(level.isFree(new GridPoint2(-1, 0)));
+        assertFalse(level.isFree(new GridPoint2(0, -1)));
+        assertFalse(level.isFree(new GridPoint2(10, 0)));
+        assertFalse(level.isFree(new GridPoint2(0, 8)));
+    }
+
+    @Test
+    void isInsideChecksOnlyBounds() {
+        assertTrue(level.isInside(new GridPoint2(1, 3)));
+        assertFalse(level.isInside(new GridPoint2(10, 8)));
+    }
+
+    @Test
+    void emptyLevelIsFreeEverywhereInside() {
+        Level empty = new Level(2, 2);
+
+        assertTrue(empty.isFree(new GridPoint2(0, 0)));
+        assertTrue(empty.isFree(new GridPoint2(1, 1)));
+    }
+
+    @Test
+    void rejectsNonPositiveSize() {
+        assertThrows(IllegalArgumentException.class, () -> new Level(0, 5));
+        assertThrows(IllegalArgumentException.class, () -> new Level(5, -1));
+    }
+
+    @Test
+    void exposesSize() {
+        assertEquals(10, level.getWidth());
+        assertEquals(8, level.getHeight());
+    }
+
+    @Test
+    void anotherTankBlocksTheCell() {
+        Tank other = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(other);
+
+        assertFalse(level.isFree(new GridPoint2(5, 5)));
+    }
+
+    @Test
+    void updateAdvancesMovableObjects() {
+        Tank tank = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(tank);
+        tank.move(Direction.RIGHT);
+
+        level.update(Tank.DEFAULT_MOVEMENT_DURATION_SECONDS);
+
+        assertFalse(tank.isMoving());
+        assertEquals(new GridPoint2(6, 5), tank.getCoordinates());
+    }
+    @Test
+    void cellsOfMovingTankAreNotFree() {
+        Tank moving = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(moving);
+
+        moving.move(Direction.RIGHT);
+
+        assertFalse(level.isFree(new GridPoint2(5, 5)));
+        assertFalse(level.isFree(new GridPoint2(6, 5)));
+    }
+
+    @Test
+    void tankCannotEnterCellTakenByAnotherMovingTank() {
+        Tank first = new Tank(new GridPoint2(5, 5), level);
+        Tank second = new Tank(new GridPoint2(7, 5), level);
+        level.addObject(first).addObject(second);
+
+        first.move(Direction.RIGHT);      // занимает (5,5) и (6,5)
+        second.move(Direction.LEFT);      // хочет в (6,5) — занято
+
+        assertFalse(second.isMoving());
+        assertEquals(new GridPoint2(7, 5), second.getCoordinates());
+    }
+    @Test
+    void bulletDamagesTankAndDisappears() {
+        Tank target = new Tank(new GridPoint2(5, 5), level);
+        Bullet bullet = new Bullet(new GridPoint2(5, 5), Direction.RIGHT);
+        level.addObject(target).addObject(bullet);
+
+        level.update(0.01f);
+
+        assertEquals(Tank.DEFAULT_HEALTH - Bullet.DEFAULT_DAMAGE, target.getHealth());
+        assertFalse(level.getObjects().contains(bullet));
+    }
+
+    @Test
+    void destroyedTankIsRemovedFromLevel() {
+        Tank weak = new Tank(new GridPoint2(5, 5), level, Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, 1);
+        level.addObject(weak).addObject(new Bullet(new GridPoint2(5, 5), Direction.RIGHT));
+
+        level.update(0.01f);
+
+        assertTrue(weak.isDestroyed());
+        assertFalse(level.getObjects().contains(weak));
+    }
+
+    @Test
+    void bulletDisappearsOnTreeButTreeSurvives() {
+        Bullet bullet = new Bullet(new GridPoint2(1, 3), Direction.UP);   // дерево стоит в (1,3)
+        level.addObject(bullet);
+
+        level.update(0.01f);
+
+        assertFalse(level.getObjects().contains(bullet));
+        assertEquals(1, level.getObjects().size());
+    }
+
+    @Test
+    void bulletsDestroyEachOther() {
+        Bullet first = new Bullet(new GridPoint2(5, 5), Direction.RIGHT);
+        Bullet second = new Bullet(new GridPoint2(5, 5), Direction.LEFT);
+        level.addObject(first).addObject(second);
+
+        level.update(0.01f);
+
+        assertTrue(first.isDestroyed());
+        assertTrue(second.isDestroyed());
+        assertFalse(level.getObjects().contains(first));
+    }
+
+    @Test
+    void bulletLeavingLevelIsRemoved() {
+        Bullet bullet = new Bullet(new GridPoint2(9, 5), Direction.RIGHT);
+        level.addObject(bullet);
+
+        level.update(Bullet.DEFAULT_FLIGHT_DURATION_SECONDS);
+
+        assertFalse(level.getObjects().contains(bullet));
+    }
+
+    @Test
+    void bulletDoesNotBlockTankMovement() {
+        level.addObject(new Bullet(new GridPoint2(6, 5), Direction.UP));
+
+        assertTrue(level.isFree(new GridPoint2(6, 5)));
+    }
+    @Test
+    void listenerLearnsAboutObjectsAddedLater() {
+        RecordingListener listener = new RecordingListener();
+        level.addListener(listener);
+        listener.added.clear();   // забываем про дерево, созданное в setUp
+
+        Tank tank = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(tank);
+
+        assertEquals(List.of(tank), listener.added);
+    }
+
+    @Test
+    void subscribingReplaysExistingObjects() {
+        Tank tank = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(tank);
+
+        RecordingListener listener = new RecordingListener();
+        level.addListener(listener);
+
+        // дерево из setUp и танк — подписка догоняет того, кто пришёл позже
+        assertEquals(2, listener.added.size());
+        assertTrue(listener.added.contains(tank));
+    }
+
+    @Test
+    void listenerLearnsAboutDestroyedObjects() {
+        Tank weak = new Tank(new GridPoint2(5, 5), level, Tank.DEFAULT_MOVEMENT_DURATION_SECONDS, 1);
+        Bullet bullet = new Bullet(new GridPoint2(5, 5), Direction.RIGHT);
+        level.addObject(weak).addObject(bullet);
+        RecordingListener listener = new RecordingListener();
+        level.addListener(listener);
+
+        level.update(0.01f);
+
+        assertTrue(listener.removed.contains(weak), "танк не исчез");
+        assertTrue(listener.removed.contains(bullet), "пуля не исчезла");
+    }
+
+    @Test
+    void allListenersAreNotified() {
+        RecordingListener first = new RecordingListener();
+        RecordingListener second = new RecordingListener();
+        level.addListener(first).addListener(second);
+
+        Tank tank = new Tank(new GridPoint2(5, 5), level);
+        level.addObject(tank);
+
+        assertTrue(first.added.contains(tank));
+        assertTrue(second.added.contains(tank));
+    }
+}
